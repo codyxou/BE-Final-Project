@@ -59,7 +59,7 @@ public static class TeamPlayer {
 	private Long playerId;
 	private String playerFirstName;
 	private String playerLastName;
-	private String playerNumber;
+	private int playerNumber;
 	private String playerPosition;
 	private int playerAge;
 	private String playerCountry;
@@ -73,6 +73,26 @@ public static class TeamPlayer {
 		playerPosition = player.getPlayerPosition();
 		playerAge = player.getPlayerAge();
 		playerCountry = player.getPlayerCountry();
+		
+	}
+	
+}
+
+@Data
+@NoArgsConstructor
+public static class TeamWithLeagues {
+	
+	private Long teamId;
+	private String teamName;
+	private String teamCountry;
+	private Set<League> leagues = new HashSet<>();
+	//teamWithLeagues contructor for a get method I built to show what leagues each team belongs in. data in SQL file
+	public TeamWithLeagues(Team team, Set<League> leagues) {
+		teamId = team.getTeamId();
+		teamName = team.getTeamName();
+		teamCountry = team.getTeamCountry();
+		this.leagues = leagues;
+
 		
 	}
 	

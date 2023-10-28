@@ -3,6 +3,8 @@ package team.entity;
 import java.util.HashSet;
 import java.util.Set;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -24,6 +26,7 @@ public class League {
 	
 	//many to many annotation and annotations to prevent recursion
 	@EqualsAndHashCode.Exclude
+	@JsonIgnore
 	@ToString.Exclude
 	@ManyToMany(mappedBy = "leagues", cascade = CascadeType.PERSIST)
 	private Set<Team> teams = new HashSet<>();

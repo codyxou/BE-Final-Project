@@ -1,16 +1,25 @@
 package team.service;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Objects;
+import java.util.Set;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import team.controller.model.TeamData;
+import team.controller.model.TeamData.TeamLeague;
+import team.controller.model.TeamData.TeamPlayer;
+import team.controller.model.TeamData.TeamWithLeagues;
+import team.dao.LeagueDao;
+import team.dao.PlayerDao;
 import team.dao.TeamDao;
+import team.entity.League;
+import team.entity.Player;
 import team.entity.Team;
 
 @Service
@@ -19,6 +28,12 @@ public class TeamService {
 	//Declaring Auto dependencies
 	@Autowired
 	private TeamDao teamDao;
+	@Autowired 
+	private PlayerDao playerDao;
+	@Autowired
+	private LeagueDao leagueDao;
+	
+	//---------------START Team Service Methods----------------//
 	
 	//transactional annotation to create a mySQL transaction for when this method is called to post to the database 
 	@Transactional(readOnly = false)
@@ -74,4 +89,129 @@ public class TeamService {
 		}
 		return result;
 	}
+	
+	//---------------END Team Service Methods------------------//
+	
+	//---------------START Player Service Methods----------------//
+	
+	@Transactional(readOnly = false)
+	public TeamPlayer savePlayer(Long teamId, TeamPlayer teamPlayer) {
+		//Grab Team Object and set equal to Find Team ID method
+		Team team = findTeamById(teamId);
+		//set variable playerId to playerId from TeamPlayer object
+		Long playerId = teamPlayer.getPlayerId();
+		//set Player Object to run findOrCreatePlayer Method
+		Player player = findOrCreatePlayer(teamId, playerId);
+		
+		copyPlayerFields(player, teamPlayer);
+		
+		player.setTeam(team);
+		team.getPlayers().add(player);
+		Player dbPlayer = playerDao.save(player);
+		return new TeamPlayer(dbPlayer);
+		
+	}
+	private void copyPlayerFields(Player player, TeamPlayer teamPlayer) {
+		player.setPlayerId(teamPlayer.getPlayerId());
+		player.setPlayerFirstName(teamPlayer.getPlayerFirstName());
+		player.setPlayerLastName(teamPlayer.getPlayerLastName());
+		player.setPlayerNumber(teamPlayer.getPlayerNumber());
+		player.setPlayerPosition(teamPlayer.getPlayerPosition());
+		player.setPlayerAge(teamPlayer.getPlayerAge());
+		player.setPlayerCountry(teamPlayer.getPlayerCountry());
+		
+	}
+	private Player findOrCreatePlayer(Long teamId, Long playerId) {
+		//nearly identical setup to findOrCreateTeam with the difference being in the else statement to have 2 parameters for find Player by ID method
+		Player player;
+		if(Objects.isNull(playerId)) {
+			player = new Player();
+		}
+		else {
+			player = findPlayerById(teamId, playerId);
+		}
+		return player;
+	}
+	private Player findPlayerById(Long teamId, Long playerId) {
+		//same setup as findTeambyId Method, but also adding Illegal argument exception to check the TeamID assigned to the player. 
+		//if it doesn't match, then it throws the exception. If it does, it returns player.
+		Player player = playerDao.findById(playerId)
+				.orElseThrow(() -> new NoSuchElementException("Player with ID=" + playerId + " was not found."));
+		
+		if(player.getTeam().getTeamId() != teamId ) {
+			throw new IllegalArgumentException("The player with ID=" + playerId + " does not play for team with ID=" + teamId);
+		}
+		return player;
+	}
+	@Transactional(readOnly = true)
+	public List<TeamPlayer> retrieveAllPlayers() {
+		
+		//Setting List of Players to the findAll Method within the PlayerDao interface
+		List<Player> listOfPlayers = playerDao.findAll();
+		List<TeamPlayer> allPlayers = new LinkedList<>();
+		
+		//iterate through the object to find all players and add to our new variable tData
+		for (Player player: listOfPlayers) {
+			TeamPlayer tData = new TeamPlayer(player);
+			
+			allPlayers.add(tData);
+		}
+		return allPlayers;
+	}
+	
+	public List<TeamPlayer> retrievePlayersByTeamId(Long teamId) {
+			//Get Team object using teamId
+			Team team = findTeamById(teamId);
+			
+			//Get the list of players for selected teamId using the team.getplayers
+			List<Player> listOfPlayers = new ArrayList<>(team.getPlayers());
+			List<TeamPlayer> teamPlayers = new LinkedList<>();
+			
+			for(Player player : listOfPlayers) {
+				TeamPlayer tpData = new TeamPlayer(player);
+				
+				teamPlayers.add(tpData);
+			}
+			return teamPlayers;
+			
+	}
+	
+	@Transactional(readOnly = false)
+	public void deletePlayerById(Long teamId, Long playerId) {
+		Player player = findPlayerById(teamId,playerId);
+		playerDao.delete(player);
+	}
+	
+	//---------------END Player Service Methods------------------//
+	
+	//---------------START League Service Methods------------------//
+	
+	//similar setup to retrieveAllPlayers above
+	@Transactional(readOnly = true)
+	public List<TeamLeague> retrieveAllLeagues() {
+		List<League> listOfLeagues = leagueDao.findAll();
+		List<TeamLeague> allLeagues = new LinkedList<>();
+		
+		for (League league: listOfLeagues) {
+			TeamLeague lData = new TeamLeague(league);
+			
+			allLeagues.add(lData);
+		}
+		return allLeagues;
+	}
+	
+	public List<TeamWithLeagues> retrieveTeamsAndLeagues() {
+		List <Team> allTeams = teamDao.findAll();
+		List <TeamWithLeagues> result = new ArrayList<>();
+		
+		for (Team team : allTeams) {
+			Set<League> leagues = team.getLeagues();
+			TeamWithLeagues teamWithLeagues = new TeamWithLeagues(team,leagues);
+			result.add(teamWithLeagues);
+		}
+		return result;
+	//---------------END League Service Methods------------------//
+
+	}
+
 }

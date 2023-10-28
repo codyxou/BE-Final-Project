@@ -22,7 +22,7 @@ public class Player {
 	private Long playerId;
 	private String playerFirstName;
 	private String playerLastName;
-	private String playerNumber;
+	private int playerNumber;
 	private String playerPosition;
 	private int playerAge;
 	private String playerCountry;
@@ -32,7 +32,7 @@ public class Player {
 	
 	@EqualsAndHashCode.Exclude
 	@ToString.Exclude
-	@ManyToOne(cascade = CascadeType.ALL)
+	@ManyToOne(cascade = CascadeType.PERSIST)
 	@JoinColumn(name = "team_id")
 	
 	//Declare Team object
