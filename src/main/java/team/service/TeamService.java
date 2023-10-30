@@ -199,7 +199,8 @@ public class TeamService {
 		}
 		return allLeagues;
 	}
-	
+	//This method should satisfy the get requirement between my many-to-many relationship. indicating what teams belong to what leagues
+	@Transactional(readOnly = true)
 	public List<TeamWithLeagues> retrieveTeamsAndLeagues() {
 		List <Team> allTeams = teamDao.findAll();
 		List <TeamWithLeagues> result = new ArrayList<>();
